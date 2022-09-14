@@ -60,18 +60,10 @@ func (this *Server) Handler(conn net.Conn) {
 
 	fmt.Println("连接成功")
 	fmt.Printf("%s连接建立成功\n", conn.RemoteAddr())
-	//用户上线了，将用户加入到onlineMap中
-	// 对map进行加锁
-	user := NewUser(conn)
-	this.mapLock.Lock()
-	//把用户对象放入到在线用户列表中
 
-	this.OnlineMap[user.Name] = user
-
-	this.mapLock.Unlock()
-
-	// 广播当前用户上线消息
-	this.BroadCast(user, "已上线")
+	// 用户上线
+	user := NewUser(conn, this)
+	user.Online()
 
 	// 接收客户端发送的消息
 	go func() {
@@ -79,7 +71,7 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				this.BroadCast(user, "下线")
+				user.Offline()
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -88,7 +80,9 @@ func (this *Server) Handler(conn net.Conn) {
 			}
 			//提取用户发送的消息（去除 '\n'） 并进行广播
 			msg := string(buf[:n-1])
-			this.BroadCast(user, msg)
+
+			user.DoMessage(msg)
+
 		}
 
 		//这里要加上括号调用
