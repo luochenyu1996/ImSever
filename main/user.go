@@ -19,7 +19,6 @@ type User struct {
 // NewUser 创建一个用户
 func NewUser(conn net.Conn, server *Server) *User {
 	userAddr := conn.RemoteAddr().String()
-
 	user := &User{
 		// 默认用户名为用户的ip地址
 		Name:   userAddr,
@@ -41,11 +40,29 @@ func (this *User) ListenMessage() {
 	}
 }
 
-// 用户消息处理
-
+// DoMessage 用户消息处理
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+	if msg == "who" {
+		this.QueryOnlineUser(msg)
+	} else {
+		this.server.BroadCast(this, msg)
+	}
 
+}
+
+// QueryOnlineUser 查询当前在线用户
+func (this *User) QueryOnlineUser(command string) {
+	this.server.mapLock.Lock()
+	for _, user := range this.server.OnlineMap {
+		onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "在线...\n"
+		this.SendMsg(onlineMsg)
+
+	}
+}
+
+// SendMsg 给当前user对应的客户端发送消息
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
 }
 
 // Online 用户上线的业务。 需要把用户对象放入到在线用户列表中
@@ -54,7 +71,6 @@ func (this *User) Online() {
 	this.server.OnlineMap[this.Name] = this
 	this.server.mapLock.Unlock()
 	this.server.BroadCast(this, "已上线")
-
 }
 
 // Offline 用户下线的业务
