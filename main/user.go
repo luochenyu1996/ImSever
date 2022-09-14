@@ -46,13 +46,35 @@ func (this *User) DoMessage(msg string) {
 		this.QueryOnlineUser()
 	} else if len(msg) > 7 && msg[:7] == "rename|" {
 		this.ReName(msg)
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		this.ToOnePerson(msg)
 	} else {
 		this.server.BroadCast(this, msg)
 	}
 
 }
 
-//修改用户名
+// ToOnePerson 给指定的用户发送消息，私聊功能的实现。  消息格式：to|用户名|消息
+func (this *User) ToOnePerson(command string) {
+	remoteName := strings.Split(command, "|")[1]
+
+	if remoteName == "" {
+		this.SendMsg("消息格式不正确。发送消息的命令格式为：to|用户名|消息\n")
+		return
+	}
+	remoteUser, ok := this.server.OnlineMap[remoteName]
+	if !ok {
+		this.SendMsg("用户名不存在")
+		return
+	}
+	content := strings.Split(command, "|")[2]
+	if content == "" {
+		this.SendMsg("消息格式不正确,无消息内容。发送消息的命令格式为：to|用户名|消息\n")
+	}
+	remoteUser.SendMsg(this.Name + "给你发来消息：" + content)
+}
+
+// ReName 修改用户名
 func (this *User) ReName(command string) {
 	//命令格式 rename|chenyu
 	newName := strings.Split(command, "|")[1]

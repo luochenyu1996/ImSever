@@ -95,7 +95,7 @@ func (this *Server) Handler(conn net.Conn) {
 		case <-isLive:
 			// 当前用户是活跃的，应该重置定时器
 			// 这里什么都不做，下面语句执行的时候，定时器会重置
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 10000):
 			//已经超时 将当前的user连接强制关闭
 			user.SendMsg(" 你已经被下线\n")
 			conn.Close()
